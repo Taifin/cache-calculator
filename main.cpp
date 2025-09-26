@@ -4,21 +4,12 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <map>
-#include <mach/mach.h>
 #include <pthread.h>
 
 constexpr int MAX_A = 1000;
 constexpr long long MAX_S = 1 << 21;
 constexpr long long MAX_M = 1 << 30;
 constexpr int N_READS = 1'000'000;
-
-void pin_thread_to_core(int core_id) {
-    thread_affinity_policy_data_t policy = { core_id };
-    thread_policy_set(mach_thread_self(),
-                      THREAD_AFFINITY_POLICY,
-                      (thread_policy_t)&policy,
-                      THREAD_AFFINITY_POLICY_COUNT);
-}
 
 uint64_t *mem = static_cast<uint64_t *>(mmap(nullptr, MAX_M, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0));
 
@@ -79,7 +70,6 @@ void printJumps() {
 int main() {
     int s = 1, n = 1 << 6;
     long long current_time = 0;
-    pin_thread_to_core(7);
     while (s * n < MAX_M) {
         s = 1;
         while (s < MAX_A) {
@@ -99,10 +89,3 @@ int main() {
     }
     printJumps();
 }
-
-// 00000000 1 000000 00000
-
-//                1 000000
-//                 1 00000
-//          1 000000 00000
-
