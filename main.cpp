@@ -50,33 +50,38 @@ long long time(long spots, int stride) {
 }
 
 bool jump(long long ct, long long nt) {
-    return ct != 0 && (nt / ct) >= 1.3;
+    return ct != -1 && nt > 3 * ct;
 }
 
-std::map<long long, long long> strideToJump;
+std::map<long long, std::vector<long long>> strideToJumps;
 
 bool isMovement(long long st1, long long st2) {
-    if (!strideToJump.contains(st2) || !strideToJump.contains(st1)) return true;
-    return strideToJump[st1] != strideToJump[st2];
+    if (!strideToJumps.contains(st2)) return true;
+    return strideToJumps[st1] != strideToJumps[st2];
 }
 
 void printJumps() {
-    for (const auto &[fst, snd]: strideToJump) {
-        std::cout << "Stride " << fst << ": " << snd << "\n";
+    for (const auto &[fst, snd]: strideToJumps) {
+        std::cout << "Stride " << fst << ": [";
+        for (const auto &e : snd) {
+            std::cout << e << " ";
+        }
+        std::cout << "]\n";
     }
 }
 
 
 int main() {
     int s = 1, n = 1 << 6;
-    long long current_time = 0;
+    long long current_time = -1;
     while (s * n < MAX_M) {
         s = 1;
         while (s < MAX_A) {
             long long new_time = time(s, n);
             std::cout << "s " << s << " n " << n << " time: " << new_time << "\n";
             if (jump(current_time, new_time)) {
-                strideToJump[n] = s;
+                if (!strideToJumps.contains(n)) strideToJumps[n] = { s - 1 };
+                else strideToJumps[n].push_back(s - 1);
             }
             s++;
             current_time = new_time;
