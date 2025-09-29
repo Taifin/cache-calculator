@@ -5,6 +5,8 @@
 #include <fcntl.h>
 #include <map>
 #include <pthread.h>
+#include <algorithm>
+#include <chrono>
 
 #ifdef TARGET_OS_MAC
 #include "mach//mach.h"
