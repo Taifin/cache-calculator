@@ -256,6 +256,6 @@ int main(int argc, char* argv[]) {
     if (lineSize == -1) {
         std::cout << "Unable to determine cache line size\n";
     } else {
-        std::cout << "Cache line size: " << lineSize << "bytes.\n";
+        std::cout << "Cache line size: " << lineSize << " bytes.\n";
     }
 }
