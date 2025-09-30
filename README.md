@@ -2,7 +2,7 @@
 
 To run:
 ```
-mkdir build && cmake .. && make && ./cache_calculator
+mkdir build && cd build && cmake .. && make && ./cache_calculator
 ```
 
 By default, debug output to stderr is enabled. It is controlled by the `DEBUG` definition.
