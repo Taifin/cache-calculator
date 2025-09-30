@@ -89,7 +89,7 @@ void printJumps(std::vector<int> &jumps, int stride, int spots) {
     DEBUG_CERR("]\n");
 }
 
-std::vector<int> measure(int stride, int maxSpots, double mod = 3) {
+std::vector<int> measure(int stride, int maxSpots, double mod = 1.8) {
     std::vector<int> jumps;
     int spots = 1;
     long long oldTime = -1;
@@ -181,19 +181,19 @@ int main(int argc, char* argv[]) {
     auto entities = findFirstOccurrences(strideToJumps);
     if (entities.size() == 1) {
         std::cout << "Cache size is " << entities.begin()->first * entities.begin()->second << " bytes" << std::endl;
-        std::cout << "Cache associativity is " << entities.begin()->second << std::endl;
+        std::cout << "Cache associativity is " << entities.begin()->first << std::endl;
     } else {
         std::cout << "Detected " << entities.size() << " entities, one of which is the cache." << std::endl;
-        for (auto& [stride, assoc] : entities) {
+        for (auto& [assoc, strd] : entities) {
             std::cout << "\tEntity with size " << assoc * stride << " and associativity " << assoc << std::endl;
         }
     }
 
-    maxSpots = MAX_ASSOCIATIVITY * 2;
+    maxSpots = MAX_ASSOCIATIVITY;
     associativityDecreaseStep = 0;
     std::map<int, int> trend;
     for (stride = 1 << 4; stride <= 256; stride <<= 1) {
-        if (associativityDecreaseStep++ == 4) {
+        if (associativityDecreaseStep++ == 2) {
             maxSpots >>= 1;
             associativityDecreaseStep = 0;
         }
@@ -210,7 +210,7 @@ int main(int argc, char* argv[]) {
 
             double ratio = (double) avgTimeHiStride / (double) avgTimeHiLoStride;
             DEBUG_CERR("Ratio: " << ratio << '\n')
-            if (0.98 < ratio && ratio < 1.02) {
+            if (0.95 < ratio && ratio < 1.03) {
                 continue;
             }
 
@@ -220,10 +220,6 @@ int main(int argc, char* argv[]) {
                 patterns[0]++;
             }
             DEBUG_CERR("Patterns: " << patterns[0] << " " << patterns[1] << '\n')
-        }
-
-        if (patterns[0] == 0 && patterns[1] == 0) {
-            continue;
         }
 
         int pattern = 0;
@@ -244,7 +240,7 @@ int main(int argc, char* argv[]) {
     int prev = -1;
     int lineSize = -1;
     for (auto &e: trend) {
-        if (lineSize == -1 && e.second == 1) {
+        if (lineSize == -1 && e.second >= 0) {
             lineSize = e.first;
         }
 
