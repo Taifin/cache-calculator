@@ -246,7 +246,7 @@ int main() {
     int lastZeroOrMinus = -1;
     int lineSize = -1;
     for (auto &e: trend) {
-        std::cout << firstOne << " " << lastZeroOrMinus << " " << lineSize << "\n";
+        DEBUG_CERR(firstOne << " " << lastZeroOrMinus << " " << lineSize << "\n")
         if (e.second <= 0) {
             lastZeroOrMinus = e.first;
         }
