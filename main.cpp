@@ -234,7 +234,7 @@ int main(int argc, char** argv) {
     } else {
         std::cout << "Detected " << entities.size() << " entities, where the first one is likely the cache." << std::endl;
         for (auto& [assoc, strd] : entities) {
-            std::cout << "\tEntity with size " << assoc * stride << " and associativity " << assoc << std::endl;
+            std::cout << "\tEntity with size " << assoc * strd << " and associativity " << assoc << std::endl;
         }
     }
 
