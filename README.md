@@ -7,6 +7,10 @@ mkdir build && cd build && cmake .. && make && ./cache_calculator
 
 By default, debug output to stderr is enabled. It is controlled by the `DEBUG` definition.
 
+The first and the only positional argument accepts a double value indicating the "steepness" of a jump: 
+how large the difference in access time to consider when determining cache size and associativity. 
+If the results are too noisy, increasing it may help. Typical values: `[1.25, 2.5]`
+
 The benchmark will output supposed cache characteristics to the stdout:
 ```
 Cache size is 131072 bytes

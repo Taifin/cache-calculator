@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <chrono>
 #include <ranges>
+#include <string>
 
 #ifdef TARGET_OS_MAC
 #include "mach//mach.h"
@@ -96,7 +97,7 @@ void printJumps(std::vector<int> &jumps, int stride, int spots) {
     DEBUG_CERR("]\n");
 }
 
-std::vector<int> measure(int stride, int maxSpots, double mod = 2) {
+std::vector<int> measure(int stride, int maxSpots, double mod = 1.25) {
     std::vector<int> jumps;
     int spots = 1;
     long long oldTime = -1;
@@ -160,7 +161,7 @@ std::map<int, long long> findFirstOccurrences(const std::map<int, std::vector<in
 }
 
 
-int main() {
+int main(int argc, char** argv) {
 #ifdef TARGET_OS_MAC
     pin_thread_to_core(9);
 #endif
@@ -175,11 +176,24 @@ int main() {
     }
 #endif
 
+    double jumpRatio = 1.25;
+    if (argc == 2) {
+        std::size_t ind;
+        try {
+            jumpRatio = std::stod(argv[1], &ind);
+        } catch (std::invalid_argument& _) {
+            std::cout << "Usage: " << argv[0] << "[jumpRatio]\n";
+            return 1;
+        }
+    }
+    DEBUG_CERR("Jump ratio " << jumpRatio << '\n');
+
+    std::cout << "Calculating cache associativity and size...\n";
     std::map<int, std::vector<int> > strideToJumps;
     int stride = 1 << 8;
     int maxSpots = MAX_SPOTS >> 2;
     while (MAX_SPOTS * stride < MAX_M) {
-        auto jumps = measure(stride, maxSpots);
+        auto jumps = measure(stride, maxSpots, jumpRatio);
         printJumps(jumps, stride, maxSpots);
 
         strideToJumps[stride] = jumps;
@@ -200,6 +214,7 @@ int main() {
         }
     }
 
+    std::cout << "Calculating cache line size...\n";
     maxSpots = MAX_SPOTS;
     std::map<int, int> trend;
     for (stride = 1 << 4; stride <= 256; stride <<= 1) {
