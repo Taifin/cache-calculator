@@ -212,7 +212,7 @@ int main(int argc, char** argv) {
     std::cout << "Calculating cache associativity and size...\n";
     std::map<int, std::vector<int> > strideToJumps;
     int stride = 1 << 8;
-    int maxSpots = MAX_SPOTS;
+    int maxSpots = MAX_SPOTS >> 1;
     while (MAX_SPOTS * stride < MAX_M) {
         auto jumps = measure(stride, maxSpots, jumpRatio);
         DEBUG_CERR("Consensus jumps:\n\t");
