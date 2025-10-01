@@ -21,7 +21,7 @@ void pin_thread_to_core(int core_id) {
 constexpr int MAX_SPOTS = 1 << 11;
 constexpr long long MAX_STRIDE = 1 << 18;
 constexpr long long MAX_M = 128UL * 1024 * 1024;
-constexpr int N_READS = 1'000'000;
+constexpr int N_READS = 300'000;
 
 #ifdef DEBUG
 #define DEBUG_CERR(msg) \
@@ -220,7 +220,7 @@ int main() {
 
             double ratio = (double) avgTimeHiStride / (double) avgTimeHiLoStride;
             DEBUG_CERR("Ratio: " << ratio << '\n')
-            if (0.95 < ratio && ratio < 1.03) {
+            if (0.93 < ratio && ratio < 1.08) {
                 continue;
             }
 
@@ -232,7 +232,7 @@ int main() {
             DEBUG_CERR("Patterns: " << patterns[0] << " " << patterns[1] << '\n')
         }
 
-        int pattern = -1;
+        int pattern = 0;
         if (patterns[1] > patterns[0]) {
             pattern = 1;
         }
@@ -247,20 +247,31 @@ int main() {
         DEBUG_CERR("\tStride " << e.first << " pattern " << e.second << "\n")
     }
 
-    int prev = -1;
+    int firstOne = -1;
+    int lastZeroOrMinus = -1;
     int lineSize = -1;
     for (auto &e: trend) {
-        if (lineSize == -1 && e.second >= 0) {
-            lineSize = e.first / 2;
+        std::cout << firstOne << " " << lastZeroOrMinus << " " << lineSize << "\n";
+        if (e.second <= 0) {
+            lastZeroOrMinus = e.first;
         }
 
-        if (e.second >= prev) {
-            prev = e.second;
-            continue;
+        if (firstOne == -1 && e.second == 1) {
+            firstOne = e.first;
         }
 
-        lineSize = -1;
-        break;
+        if ((firstOne != -1) && (lastZeroOrMinus != -1) && firstOne < lastZeroOrMinus) {
+            lineSize = -1;
+            break;
+        }
+
+        if (e.second == 0 || (lineSize == -1 && e.second == 1)) {
+            lineSize = e.first;
+        }
+
+        if (e.second == -1) {
+            lineSize = -1;
+        }
     }
 
     if (lineSize == -1) {
