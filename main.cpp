@@ -37,11 +37,6 @@ constexpr int N_READS = 300'000;
 
 uintptr_t *mem = static_cast<uintptr_t *>(mmap(nullptr, MAX_M, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0));
 
-volatile uintptr_t *ptr;
-void consume(volatile uintptr_t *p) {
-    ptr = p;
-}
-
 uintptr_t* read(uintptr_t *p) {
     for (int i = 0; i < N_READS; i++) {
         p = (uintptr_t *) *p;
@@ -70,14 +65,14 @@ long long time(long spots, long long stride) {
     }
     *ptr = (uintptr_t) head; // close the ring
 
-    volatile auto p = read(mem);
-    consume(p);
+    auto p = read(mem);
+    fprintf(stdin, "%p", p);
 
     std::chrono::time_point before = std::chrono::steady_clock::now();
     p = read(mem);
     std::chrono::time_point after = std::chrono::steady_clock::now();
 
-    consume(p);
+    fprintf(stdin, "%p", p);
 
     return std::chrono::duration_cast<std::chrono::microseconds>(after - before).count();
 }
