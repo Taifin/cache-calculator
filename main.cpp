@@ -18,7 +18,7 @@ void pin_thread_to_core(int core_id) {
 }
 #endif
 
-constexpr int MAX_ASSOCIATIVITY = 4096;
+constexpr int MAX_SPOTS = 1 << 11;
 constexpr long long MAX_STRIDE = 1 << 21;
 constexpr long long MAX_M = 1 << 30;
 constexpr int N_READS = 1'000'000;
@@ -33,11 +33,16 @@ constexpr int N_READS = 1'000'000;
 
 uintptr_t *mem = static_cast<uintptr_t *>(mmap(nullptr, MAX_M, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0));
 
-void read(const uintptr_t *p, long spots) {
+volatile uintptr_t *ptr;
+void consume(volatile uintptr_t *p) {
+    ptr = p;
+}
+
+uintptr_t* read(uintptr_t *p) {
     for (int i = 0; i < N_READS; i++) {
         p = (uintptr_t *) *p;
-        asm volatile("" : "+r"(p));
     }
+    return p;
 }
 
 long long time(long spots, long long stride) {
@@ -61,16 +66,19 @@ long long time(long spots, long long stride) {
     }
     *ptr = (uintptr_t) head; // close the ring
 
-    read(mem, spots);
+    volatile auto p = read(mem);
+    consume(p);
 
     std::chrono::time_point before = std::chrono::steady_clock::now();
-    read(mem, spots);
+    p = read(mem);
     std::chrono::time_point after = std::chrono::steady_clock::now();
+
+    consume(p);
 
     return std::chrono::duration_cast<std::chrono::microseconds>(after - before).count();
 }
 
-bool jump(long long ct, long long nt, double mod = 1.5) {
+bool jump(long long ct, long long nt, double mod) {
     return ct != -1 && (double) nt > mod * (double) ct;
 }
 
@@ -89,7 +97,7 @@ void printJumps(std::vector<int> &jumps, int stride, int spots) {
     DEBUG_CERR("]\n");
 }
 
-std::vector<int> measure(int stride, int maxSpots, double mod = 1.8) {
+std::vector<int> measure(int stride, int maxSpots, double mod = 2) {
     std::vector<int> jumps;
     int spots = 1;
     long long oldTime = -1;
@@ -143,7 +151,7 @@ std::map<int, long long> findFirstOccurrences(const std::map<int, std::vector<in
             }
         }
 
-        if (firstOccurrenceFromEnd != -1) {
+        if (firstOccurrenceFromEnd != -1 && firstOccurrenceFromEnd != lastEntry->first) {
             result[targetIndex] = firstOccurrenceFromEnd;
         }
 
@@ -153,21 +161,15 @@ std::map<int, long long> findFirstOccurrences(const std::map<int, std::vector<in
 }
 
 
-int main(int argc, char* argv[]) {
+int main() {
 #ifdef TARGET_OS_MAC
     pin_thread_to_core(9);
 #endif
 
     std::map<int, std::vector<int> > strideToJumps;
     int stride = 1 << 8;
-    int maxSpots = MAX_ASSOCIATIVITY >> 2;
-    int associativityDecreaseStep = 0;
-    while (MAX_ASSOCIATIVITY * stride < MAX_M) {
-        if (associativityDecreaseStep++ == 3) {
-            maxSpots >>= 1;
-            associativityDecreaseStep = 0;
-        }
-
+    int maxSpots = MAX_SPOTS >> 2;
+    while (MAX_SPOTS * stride < MAX_M) {
         auto jumps = measure(stride, maxSpots);
         printJumps(jumps, stride, maxSpots);
 
@@ -189,15 +191,9 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    maxSpots = MAX_ASSOCIATIVITY;
-    associativityDecreaseStep = 0;
+    maxSpots = MAX_SPOTS;
     std::map<int, int> trend;
     for (stride = 1 << 4; stride <= 256; stride <<= 1) {
-        if (associativityDecreaseStep++ == 2) {
-            maxSpots >>= 1;
-            associativityDecreaseStep = 0;
-        }
-
         DEBUG_CERR("Max spots: " << maxSpots << "\n")
 
         auto avgTimeHiStride = measure(stride, 0LL, maxSpots);
@@ -222,7 +218,7 @@ int main(int argc, char* argv[]) {
             DEBUG_CERR("Patterns: " << patterns[0] << " " << patterns[1] << '\n')
         }
 
-        int pattern = 0;
+        int pattern = -1;
         if (patterns[1] > patterns[0]) {
             pattern = 1;
         }
