@@ -19,8 +19,8 @@ void pin_thread_to_core(int core_id) {
 #endif
 
 constexpr int MAX_SPOTS = 1 << 11;
-constexpr long long MAX_STRIDE = 1 << 21;
-constexpr long long MAX_M = 1 << 30;
+constexpr long long MAX_STRIDE = 1 << 18;
+constexpr long long MAX_M = 128UL * 1024 * 1024;
 constexpr int N_READS = 1'000'000;
 
 #ifdef DEBUG
@@ -251,7 +251,7 @@ int main() {
     int lineSize = -1;
     for (auto &e: trend) {
         if (lineSize == -1 && e.second >= 0) {
-            lineSize = e.first;
+            lineSize = e.first / 2;
         }
 
         if (e.second >= prev) {
