@@ -31,6 +31,10 @@ constexpr int N_READS = 1'000'000;
     ;
 #endif
 
+#ifdef __linux__
+#include "sched.h"
+#endif
+
 uintptr_t *mem = static_cast<uintptr_t *>(mmap(nullptr, MAX_M, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0));
 
 volatile uintptr_t *ptr;
@@ -164,6 +168,16 @@ std::map<int, long long> findFirstOccurrences(const std::map<int, std::vector<in
 int main() {
 #ifdef TARGET_OS_MAC
     pin_thread_to_core(9);
+#endif
+
+#ifdef __linux__
+    cpu_set_t set;
+    CPU_ZERO(&set);
+    CPU_SET(0, &set);
+    if (sched_setaffinity(0, sizeof(set), &set) == -1) {
+        perror("sched_setaffinity");
+        return 1;
+    }
 #endif
 
     std::map<int, std::vector<int> > strideToJumps;
