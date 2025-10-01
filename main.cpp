@@ -98,15 +98,36 @@ void printJumps(std::vector<int> &jumps, int stride, int spots) {
 }
 
 std::vector<int> measure(int stride, int maxSpots, double mod = 1.25) {
-    std::vector<int> jumps;
-    int spots = 1;
-    long long oldTime = -1;
-    while (spots++ < maxSpots) {
-        long long newTime = time(spots, stride);
-        if (jump(oldTime, newTime, mod)) jumps.push_back(spots - 1);
-        oldTime = newTime;
+    std::vector<std::vector<int>> attempts(3);
+    for (int attempt = 0; attempt < 3; attempt++) {
+        DEBUG_CERR("Attempt " << attempt << '\n');
+        std::vector<int> jumps;
+        int spots = 1;
+        long long oldTime = -1;
+        while (spots++ < maxSpots) {
+            long long newTime = time(spots, stride);
+            if (jump(oldTime, newTime, mod)) jumps.push_back(spots - 1);
+            oldTime = newTime;
+        }
+        printJumps(jumps, stride, maxSpots);
+        attempts[attempt] = jumps;
     }
-    return jumps;
+
+    std::map<int, int> jumpsCount;
+    for (auto& jumps : attempts) {
+        for (auto j : jumps) {
+            jumpsCount[j]++;
+        }
+    }
+
+    std::vector<int> result;
+    for (const auto&[j, c] : jumpsCount) {
+        if (c >= 2) {
+            result.push_back(j);
+        }
+    }
+
+    return result;
 }
 
 long long measure(int hiStride, int loStride, int maxSpots) {
@@ -194,6 +215,7 @@ int main(int argc, char** argv) {
     int maxSpots = MAX_SPOTS >> 2;
     while (MAX_SPOTS * stride < MAX_M) {
         auto jumps = measure(stride, maxSpots, jumpRatio);
+        DEBUG_CERR("Consensus jumps:\n\t");
         printJumps(jumps, stride, maxSpots);
 
         strideToJumps[stride] = jumps;
@@ -204,7 +226,9 @@ int main(int argc, char** argv) {
         break;
     }
     auto entities = findFirstOccurrences(strideToJumps);
-    if (entities.size() == 1) {
+    if (entities.empty()) {
+        std::cout << "Could not detect any entity to determine cache size and associativity...\n";
+    } else if (entities.size() == 1) {
         std::cout << "Cache size is " << entities.begin()->first * entities.begin()->second << " bytes" << std::endl;
         std::cout << "Cache associativity is " << entities.begin()->first << std::endl;
     } else {
